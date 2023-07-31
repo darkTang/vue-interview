@@ -171,3 +171,96 @@ Vue3中有三种effect（渲染effect、计算属性effect、用户自定义的e
 - Vue在patch过程中通过key可以判断两个虚拟节点是否是相同节点。（可以复用老节点）
 - 无key会导致更新的时候出现问题。
 - 尽量不要采用索引作为key。
+
+# 8. Vue3中CompositionAPI的优势
+- 在Vue2中采用的是OptionsAPI，用户提供的data、props、methods、computed、watch等属性。（用户编写复杂业务逻辑会出现反复横跳问题）
+- Vue中所有的属性都是通过this访问，this存在指向明确问题。
+- `CompositionAPI`对`Tree-Shaking`更友好，因为逻辑都会封装在函数中，通过导入导出进行`Tree-Shaking`。
+- 组件逻辑共享问题，Vue2采用mixins实现组件之间的逻辑共享；但是会有数据来源不明确，命名冲突等问题。Vue3采用`CompositionAPI`提取公共逻辑非常方便。
+
+# 9. Vue的性能优化
+- 数据层级不易过深，合理设置响应式数据。
+- 使用数据时缓存值的结果，不频繁取值。
+- 合理设置key。
+- v-show和v-if的选取。
+- 控制组件粒度，合理拆分组件。
+- 采用异步组件 -> 借助webpack的分包能力。
+- 使用keep-alive缓存组件。
+- 分页、滚动等策略。
+
+# 10. SPA首屏加载速度慢的解决
+- 使用路由懒加载、异步组件、组件拆分等，减少入口文件体积大小（优化体验骨架屏）
+- 抽离公共代码，采用splitChunks进行代码分割。
+- 组件通过按需加载方式。
+- 静态资源缓存（http缓存、localStorage缓存）
+- 图片资源压缩。
+- 静态资源CDN（就近访问+缓存）加速。
+- 使用SSR对首屏进行服务端渲染。
+
+# 11. 异步组件的作用及原理
+## 11.1 Vue2的写法
+- 回调函数写法
+```js
+Vue.component('async-example', function (resolve, reject) {
+  setTimeout(function () {
+    // 向 `resolve` 回调传递组件定义
+    resolve({        // 这个对象就是一个Vue配置项
+      template: '<div>I am async!</div>'
+    })
+  }, 1000)
+})
+```
+- 将异步组件和 webpack 的 code-splitting 功能一起配合使用：
+```js
+Vue.component('async-webpack-example', function (resolve) {
+  // 这个特殊的 `require` 语法将会告诉 webpack
+  // 自动将你的构建代码切割成多个包，这些包
+  // 会通过 Ajax 请求加载
+  require(['./my-async-component'], resolve)
+})
+```
+- promise写法
+```js
+new Vue({
+  // ...
+  components: {
+    'my-component': () => import('./my-async-component')
+  }
+})
+```
+- 高阶组件
+```js
+const AsyncComponent = () => ({
+  // 需要加载的组件 (应该是一个 `Promise` 对象)
+  component: import('./MyComponent.vue'),
+  // 异步组件加载时使用的组件
+  loading: LoadingComponent,
+  // 加载失败时使用的组件
+  error: ErrorComponent,
+  // 展示加载时组件的延时时间。默认值是 200 (毫秒)
+  delay: 200,
+  // 如果提供了超时时间且组件加载也超时了，
+  // 则使用加载失败时使用的组件。默认值是：`Infinity`
+  timeout: 3000
+})
+// 最后将 AsyncComponent 即可
+```
+
+# 12. nextTick的理解
+- Vue视图更新是异步的，底层本身就有一个nextTick方法，维护一个异步队列，帮助我们收集watcher，并去重。
+- 自己定义的nextTick方法会与底层的nextTick合并，按顺序依次执行。
+```js
+handleClick() {
+  this.count = 12     // [底层的nextTick, 定义的nextTick]  先执行底层的nextTick，帮我们进行页面更新，再执行定义的nextTick，获取页面最新数据
+  this.$nextTick(() => {
+    console.log(document.querySelector('div').innerHTML)
+  })
+}
+---------------------------------------
+this.$nextTick(() => {
+  console.log(document.querySelector('div').innerHTML)
+})
+this.count = 12       // [定义的nextTick, 底层的nextTick1, 底层的nextTick2...]  先执行定义的nextTick，获取的页面数据还是老数据，再执行 底层的nextTick，进行页面更新
+```
+
+# 13. 递归组件的理解
