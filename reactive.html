@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const obj = {
+        name: "zs",
+        age: 12,
+        a: { b: 1 },
+        arr: [1, 2, 3, { a: 2 }],
+      };
+
+      const methods = [
+        "push",
+        "pop",
+        "shift",
+        "unshift",
+        "splice",
+        "reverse",
+        "sort",
+      ];
+      const oldArrayPrototype = Array.prototype;
+      const newArrayPrototype = Object.create(oldArrayPrototype);
+      methods.forEach((method) => {
+        newArrayPrototype[method] = function (...args) {
+          // 执行对应的watcher，重新渲染
+          console.log("触发更新");
+          oldArrayPrototype[method].call(this, ...args);
+        };
+      });
+
+      function defineReactive(target, key, value) {
+        observer(value);
+        Object.defineProperty(target, key, {
+          get() {
+            console.log(`${key}读取更新`);
+            // 记录对应的watcher
+            return value;
+          },
+          set(newVal) {
+            if (value !== newVal) {
+              // 执行对应的watcher，重新渲染
+              console.log(`${key}修改更新`);
+              value = newVal;
+              observer(newVal);
+            }
+          },
+        });
+      }
+
+      function observer(data) {
+        if (typeof data !== "object" || data === null) return;
+        if (Array.isArray(data)) {
+          data.__proto__ = newArrayPrototype;
+          for (let value of data) {
+            observer(value)
+          }
+        } else {
+          for (let key in data) {
+            data.hasOwnProperty(key) && defineReactive(data, key, data[key]);
+          }
+        }
+      }
+
+      observer(obj);
+      console.log(obj);
+    </script>
+  </body>
+</html>

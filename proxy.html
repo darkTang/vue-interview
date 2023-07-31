@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <script>
+      const obj = { name: "zs", age: 12, a: { b: 1 }, arr: [1, 2, 3] };
+
+      let handle = {
+        get(target, propName) {
+          console.log(`${propName}读取更新`);
+          // 收集effect
+          if (typeof target[propName] !== "object" || target[propName] === null)
+            return;
+          return new Proxy(target[propName], handle);
+          return target[propName];
+        },
+        set(target, propName, newVal) {
+          console.log(`${propName}修改更新`)
+          // 触发effer更新
+          target[propName] = newVal;
+        },
+        deleteProperty(target, propName) {
+          // 触发effer更新
+          return delete target[propName];
+        },
+      };
+
+      function reactive(target) {
+        return new Proxy(target, handle);
+      }
+
+      const newObj = reactive(obj);
+      console.log(newObj);
+    </script>
+  </body>
+</html>
