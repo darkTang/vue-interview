@@ -263,4 +263,9 @@ this.$nextTick(() => {
 this.count = 12       // [定义的nextTick, 底层的nextTick1, 底层的nextTick2...]  先执行定义的nextTick，获取的页面数据还是老数据，再执行 底层的nextTick，进行页面更新
 ```
 
-# 13. 递归组件的理解
+# 13. 组件中name选项的好处
+- 增加name选项会在components属性中增加组件本身，实现组件的递归调用。
+```js
+Sub.options.components[name] = Sub  // 子组件会通过name属性，将足迹也注册到组件中
+```
+- 方便调试和查找对应组件。
