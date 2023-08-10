@@ -251,7 +251,7 @@ const AsyncComponent = () => ({
 - 自己定义的nextTick方法会与底层的nextTick合并，按顺序依次执行。
 ```js
 handleClick() {
-  this.count = 12     // [底层的nextTick, 定义的nextTick]  先执行底层的nextTick，帮我们进行页面更新，再执行定义的nextTick，获取页面最新数据
+  this.count = 12     // [底层的nextTick, 定义的nextTick]  先执行底层的nextTick，维护一个异步队列，帮助我们收集watcher，并去重，然后进行页面更新，再执行定义的nextTick，获取页面最新数据
   this.$nextTick(() => {
     console.log(document.querySelector('div').innerHTML)
   })
@@ -260,7 +260,7 @@ handleClick() {
 this.$nextTick(() => {
   console.log(document.querySelector('div').innerHTML)
 })
-this.count = 12       // [定义的nextTick, 底层的nextTick1, 底层的nextTick2...]  先执行定义的nextTick，获取的页面数据还是老数据，再执行 底层的nextTick，进行页面更新
+this.count = 12       // [定义的nextTick, 底层的nextTick1]  先执行定义的nextTick，获取的页面数据还是老数据，再执行 底层的nextTick，进行页面更新
 ```
 
 # 13. 组件中name选项的好处
